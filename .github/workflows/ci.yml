@@ -57,7 +57,7 @@ jobs:
             CONFIG_TARGET_qualcommax_ipq50xx_DEVICE_redmi_ax3000=y
 
             CONFIG_IB=y
-            # CONFIG_IB_STANDALONE is not set
+            CONFIG_IB_STANDALONE=y
             CONFIG_SDK=y
             CONFIG_MAKE_TOOLCHAIN=y
 
@@ -95,6 +95,24 @@ jobs:
           cp -v "${base_feed}"/ath11k-firmware-qcn6122_*.ipk "${target_feed}/"
 
           make package/index V=sc
+          make target/imagebuilder/clean V=sc
+          make target/imagebuilder/compile V=sc
+
+      - name: Validate ImageBuilder package set
+        run: |
+          set -euo pipefail
+
+          ib_archive="$(find bin/targets/qualcommax/ipq50xx -maxdepth 1 -name '*imagebuilder*.tar.zst' -print -quit)"
+          test -n "${ib_archive}"
+
+          tmpdir="$(mktemp -d)"
+          tar -I zstd -xf "${ib_archive}" -C "${tmpdir}"
+          ib_dir="$(find "${tmpdir}" -mindepth 1 -maxdepth 1 -type d -print -quit)"
+
+          test -f "${ib_dir}"/packages/ath11k-firmware-ipq5018_*.ipk
+          test -f "${ib_dir}"/packages/ath11k-firmware-qcn6122_*.ipk
+          test -f "${ib_dir}"/packages/libgcc1_*.ipk
+          ! grep -q '^src/' "${ib_dir}/repositories.conf"
 
       - name: Upload bin to artifacts
         uses: actions/upload-artifact@v7
