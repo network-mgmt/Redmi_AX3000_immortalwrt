@@ -84,6 +84,18 @@ jobs:
         run: |
           make -j$(nproc) V=sc
 
+      - name: Include firmware packages in target feed
+        run: |
+          set -euo pipefail
+
+          target_feed="bin/targets/qualcommax/ipq50xx/packages"
+          base_feed="bin/packages/aarch64_cortex-a53/base"
+
+          cp -v "${base_feed}"/ath11k-firmware-ipq5018_*.ipk "${target_feed}/"
+          cp -v "${base_feed}"/ath11k-firmware-qcn6122_*.ipk "${target_feed}/"
+
+          make package/index V=sc
+
       - name: Upload bin to artifacts
         uses: actions/upload-artifact@v7
         with:
